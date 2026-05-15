@@ -1,0 +1,16 @@
+{
+  "required": true,
+  "minVersion": "0.8",
+  "package": "com.viaversion.viafabricplus.injection.mixin",
+  "compatibilityLevel": "JAVA_21",
+  "plugin": "com.viaversion.viafabricplus.injection.ViaFabricPlusMixinPlugin",
+  "client": [
+    "base.connection.bedrock.MixinClientConnection",
+    "base.connection.bedrock.MixinConnectScreen",
+    "base.connection.bedrock.MixinServerAddress",
+    "base.connection.bedrock.MixinServerNameResolver"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}
