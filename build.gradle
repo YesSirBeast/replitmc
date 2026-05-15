@@ -1,0 +1,137 @@
+plugins {
+    // fabric-loom 1.9+ requires Gradle 8.11 — binary in /tmp/gradle-8.11
+    id 'fabric-loom' version "${loom_version}"
+    id 'maven-publish'
+}
+
+version = project.mod_version
+group = project.maven_group
+
+base {
+    archivesName = project.archives_base_name
+}
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(project.java_version as int)
+    }
+    withSourcesJar()
+}
+
+loom {
+    accessWidenerPath = file("src/main/resources/viafabricplus.accesswidener")
+
+    mixin {
+        defaultRefmapName = "viafabricplus.refmap.json"
+    }
+}
+
+repositories {
+    // ── Local file repo: all bundled JARs extracted from 4.0.5 / 4.5.3 ──
+    maven {
+        name = "LocalBundled"
+        url = uri("${projectDir}/local-libs")
+    }
+
+    // ── ViaVersion official repos (releases + snapshots) ─────────────────
+    maven {
+        name = "ViaVersion"
+        url = "https://repo.viaversion.com/"
+        content { includeGroupByRegex "com\\.viaversion(\\..*)?|net\\.raphimc" }
+    }
+    maven {
+        name = "ViaVersionSnapshots"
+        url = "https://repo.viaversion.com/snapshots/"
+        content { includeGroupByRegex "com\\.viaversion(\\..*)?|net\\.raphimc" }
+    }
+
+    // ── Lenni0451 (Classic4J, Reflect, mocha) ────────────────────────────
+    maven {
+        name = "Lenni0451"
+        url = "https://maven.lenni0451.net/releases/"
+        content { includeGroupByRegex "net\\.lenni0451.*|de\\.florianmichael.*" }
+    }
+
+    mavenCentral()
+}
+
+configurations {
+    include { canBeResolved = true }
+}
+
+dependencies {
+    // ── Fabric toolchain ──────────────────────────────────────────────────
+    minecraft "com.mojang:minecraft:${project.minecraft_version}"
+    mappings  "net.fabricmc:yarn:${project.yarn_mappings}:v2"
+    modImplementation "net.fabricmc:fabric-loader:${project.loader_version}"
+    modImplementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_version}"
+
+    // ── ViaVersion core (unchanged from 4.0.5-BACKPORT) ──────────────────
+    include(modImplementation("com.viaversion:viaversion-common:${project.viaversion_version}") {
+        transitive = false
+    })
+    include(modImplementation("com.viaversion:viabackwards-common:${project.viabackwards_version}") {
+        transitive = false
+    })
+    include(modImplementation("net.raphimc:vialegacy:${project.vialegacy_version}") {
+        transitive = false
+    })
+    include(modImplementation("net.raphimc:viaaprilfools:${project.viaaprilfools_version}") {
+        transitive = false
+    })
+    include(modImplementation("net.raphimc:vialoader:${project.vialoader_version}") {
+        transitive = false
+    })
+
+    // ── ViaBedrock: UPGRADED 0.0.16 → 0.0.27 (Bedrock 1.26) ─────────────
+    include(modImplementation("net.raphimc:viabedrock:${project.viabedrock_version}") {
+        transitive = false
+    })
+
+    // ── RakNet: UPGRADED 1.0.0.CR3 → 1.7.0 ──────────────────────────────
+    include(implementation("net.raphimc:netty-transport-raknet:${project.raknet_version}") {
+        exclude group: "io.netty"
+    })
+
+    // ── NetherNet: NEW — WebRTC transport for Bedrock 1.26 ────────────────
+    include(implementation("net.raphimc:netty-transport-nethernet:${project.nethernet_version}") {
+        exclude group: "io.netty"
+    })
+
+    // ── Auth & utilities ──────────────────────────────────────────────────
+    include(modImplementation("net.raphimc:MinecraftAuth:${project.minecraftauth_version}") {
+        transitive = false
+    })
+    include(implementation("net.raphimc:Reflect:${project.reflect_version}") {
+        transitive = false
+    })
+    include(modImplementation("de.florianmichael:Classic4J:${project.classic4j_version}") {
+        transitive = false
+    })
+
+    // ── JWT (Bedrock auth token parsing) ──────────────────────────────────
+    include(implementation("io.jsonwebtoken:jjwt-api:${project.jjwt_version}"))
+    include(runtimeOnly("io.jsonwebtoken:jjwt-impl:${project.jjwt_version}"))
+    include(runtimeOnly("io.jsonwebtoken:jjwt-gson:${project.jjwt_version}"))
+
+    // ── Misc bundled libs ─────────────────────────────────────────────────
+    include(implementation("net.jodah:expiringmap:0.5.10"))
+    include(implementation("net.lenni0451:mocha:${project.mocha_version}") { transitive = false })
+}
+
+processResources {
+    inputs.property "version", project.version
+
+    filesMatching("fabric.mod.json") {
+        expand "version": project.version
+    }
+}
+
+tasks.withType(JavaCompile).configureEach {
+    options.release = project.java_version as int
+    options.encoding = "UTF-8"
+}
+
+jar {
+    from("LICENSE") { rename { "${it}_${project.archives_base_name}" } }
+}
