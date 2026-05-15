@@ -1,0 +1,9 @@
+accessWidener v2 named
+
+# ClientConnection — expose channel & packetListener for RakNet/NetherNet pipeline hooks
+accessible field net/minecraft/network/ClientConnection channel Lio/netty/channel/Channel;
+accessible field net/minecraft/network/ClientConnection packetListener Lnet/minecraft/network/listener/PacketListener;
+
+# ServerAddress fields are NOT widened here:
+# MixinServerAddress injects originalAddress/originalPort via @Unique,
+# so no direct field access to the Yarn-internal hostAndPort field is needed.
